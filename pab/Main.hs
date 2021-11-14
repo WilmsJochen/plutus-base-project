@@ -27,6 +27,8 @@ import           Plutus.PAB.Simulator                (SimulatorEffectHandlers)
 import qualified Plutus.PAB.Simulator                as Simulator
 import qualified Plutus.PAB.Webserver.Server         as PAB.Server
 import           Plutus.Contracts.Game               as Game
+import           MyModule
+import           Mint
 import           Plutus.Trace.Emulator.Extract       (writeScriptsTo, ScriptsConfig (..), Command (..))
 import           Ledger.Index                        (ValidatorMode(..))
 
@@ -65,7 +67,8 @@ writeCostingScripts = do
 
 
 data StarterContracts =
-    GameContract
+      MyModuleContract
+    | MintContract
     deriving (Eq, Ord, Show, Generic)
     deriving anyclass OpenApi.ToSchema
 
@@ -87,11 +90,13 @@ instance Pretty StarterContracts where
     pretty = viaShow
 
 instance Builtin.HasDefinitions StarterContracts where
-    getDefinitions = [GameContract]
+    getDefinitions = [MyModuleContract, MintContract]
     getSchema =  \case
-        GameContract -> Builtin.endpointsToSchemas @Game.GameSchema
+        MyModuleContract -> Builtin.endpointsToSchemas @MyModule.GameSchema
+        MintContract -> Builtin.endpointsToSchemas @Mint.NFTSchema
     getContract = \case
-        GameContract -> SomeBuiltin (Game.game @ContractError)
+        MyModuleContract -> SomeBuiltin (MyModule.game @ContractError)
+        MintContract -> SomeBuiltin (Mint.mintNFT @ContractError)
 
 handlers :: SimulatorEffectHandlers (Builtin StarterContracts)
 handlers =
