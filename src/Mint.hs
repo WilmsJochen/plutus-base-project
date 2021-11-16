@@ -26,42 +26,41 @@ import           Ledger                 hiding (mint, singleton)
 import           Ledger.Constraints     as Constraints
 import qualified Ledger.Typed.Scripts   as Scripts
 import           Ledger.Value           as Value
-import           Prelude                (IO, Semigroup (..), Show (..), String)
+import           Prelude                (Show (..), String)
 import           Text.Printf            (printf)
 
 {-# INLINABLE mkPolicy #-}
-mkPolicy :: TokenName -> () -> ScriptContext -> Bool
-mkPolicy tn () ctx =   traceIfFalse "wrong amount minted" checkMintedAmount
+mkPolicy :: PubKeyHash -> () -> ScriptContext -> Bool
+mkPolicy pkh () ctx =   traceIfFalse "wrong amount minted" checkMintedAmountIsOne &&
+                       traceIfFalse "Not signed by correct party" (txSignedBy (scriptContextTxInfo ctx) pkh)
   where
     info :: TxInfo
     info = scriptContextTxInfo ctx
 
-    checkMintedAmount :: Bool
-    checkMintedAmount = case flattenValue (txInfoMint  info) of
-        [(cs, tn', amt)] -> cs  == ownCurrencySymbol ctx && tn' == tn && amt == 1
+    checkMintedAmountIsOne :: Bool
+    checkMintedAmountIsOne = case flattenValue (txInfoMint  info) of
+        [(_, _, amt)] -> amt == 1
         _                -> False
 
-policy :: TokenName -> Scripts.MintingPolicy
-policy tn = mkMintingPolicyScript $
-    $$(PlutusTx.compile [|| \tn' -> Scripts.wrapMintingPolicy $ mkPolicy tn' ||])
+policy :: PubKeyHash -> Scripts.MintingPolicy
+policy pkh = mkMintingPolicyScript $
+    $$(PlutusTx.compile [|| \pkh' -> Scripts.wrapMintingPolicy $ mkPolicy pkh' ||])
     `PlutusTx.applyCode`
-    PlutusTx.liftCode tn
+    PlutusTx.liftCode pkh
 
-curSymbol :: TokenName -> CurrencySymbol
-curSymbol tn = scriptCurrencySymbol $ policy tn
+curSymbol :: PubKeyHash -> CurrencySymbol
+curSymbol pkh = scriptCurrencySymbol $ policy pkh
 
 type NFTSchema = Endpoint "mint" TokenName
 
 mint :: TokenName -> Contract w NFTSchema Text ()
 mint tn = do
     pkh    <- Contract.ownPubKeyHash
-    let val     = Value.singleton (curSymbol tn) tn 1
-        lookups = Constraints.mintingPolicy (policy tn)
+    let val     = Value.singleton (curSymbol pkh) tn 1
+        lookups = Constraints.mintingPolicy (policy pkh)
         tx      = Constraints.mustMintValue val
     ledgerTx <- submitTxConstraintsWith @Void lookups tx
     _ <- awaitTxConfirmed (getCardanoTxId ledgerTx)
-
-
     Contract.logInfo @String $ printf "forged %s" (show val)
 
 mint' :: Promise () NFTSchema Text ()
