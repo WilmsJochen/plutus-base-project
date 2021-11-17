@@ -2,6 +2,7 @@
 {-# LANGUAGE DeriveAnyClass      #-}
 {-# LANGUAGE DeriveGeneric       #-}
 {-# LANGUAGE FlexibleContexts    #-}
+{-# LANGUAGE DerivingStrategies  #-}
 {-# LANGUAGE NoImplicitPrelude   #-}
 {-# LANGUAGE OverloadedStrings   #-}
 {-# LANGUAGE ScopedTypeVariables #-}
@@ -9,6 +10,11 @@
 {-# LANGUAGE TypeApplications    #-}
 {-# LANGUAGE TypeFamilies        #-}
 {-# LANGUAGE TypeOperators       #-}
+{-# LANGUAGE GeneralizedNewtypeDeriving #-}
+{-# LANGUAGE LambdaCase                 #-}
+{-# LANGUAGE MultiParamTypeClasses      #-}
+{-# LANGUAGE NoImplicitPrelude          #-}
+{-# LANGUAGE RecordWildCards            #-}
 
 module Mint ( policy
              , curSymbol
@@ -26,12 +32,25 @@ import           Ledger                 hiding (mint, singleton)
 import           Ledger.Constraints     as Constraints
 import qualified Ledger.Typed.Scripts   as Scripts
 import           Ledger.Value           as Value
-import           Prelude                (Show (..), String)
+import           Prelude                (Show (..),Semigroup (..), String)
+import qualified Prelude                as Haskell
+
 import           Text.Printf            (printf)
+import           Data.Aeson             (FromJSON, ToJSON)
+import           Data.Semigroup         (Last (..))
+import           GHC.Generics           (Generic)
+import           Schema                 (ToSchema)
+
+data CreateParams = CreateParams
+    { cpTokenName :: TokenName
+    , cpOwnerPkh  :: PubKeyHash
+    }
+    deriving stock (Generic, Haskell.Show, Haskell.Eq)
+    deriving anyclass (FromJSON, ToJSON, ToSchema)
 
 {-# INLINABLE mkPolicy #-}
 mkPolicy :: PubKeyHash -> () -> ScriptContext -> Bool
-mkPolicy pkh () ctx =   traceIfFalse "wrong amount minted" checkMintedAmountIsOne &&
+mkPolicy pkh () ctx =  traceIfFalse "wrong amount minted" checkMintedAmountIsOne &&
                        traceIfFalse "Not signed by correct party" (txSignedBy (scriptContextTxInfo ctx) pkh)
   where
     info :: TxInfo
@@ -51,14 +70,18 @@ policy pkh = mkMintingPolicyScript $
 curSymbol :: PubKeyHash -> CurrencySymbol
 curSymbol pkh = scriptCurrencySymbol $ policy pkh
 
-type NFTSchema = Endpoint "mint" TokenName
+type NFTSchema = Endpoint "mint" CreateParams
 
-mint :: TokenName -> Contract w NFTSchema Text ()
-mint tn = do
-    pkh    <- Contract.ownPubKeyHash
-    let val     = Value.singleton (curSymbol pkh) tn 1
-        lookups = Constraints.mintingPolicy (policy pkh)
-        tx      = Constraints.mustMintValue val
+mint :: CreateParams -> Contract w NFTSchema Text ()
+mint cp = do
+    pkh         <- Contract.ownPubKeyHash
+    let tn       = cpTokenName cp
+        ownerPkh = cpOwnerPkh  cp
+        val      = Value.singleton (curSymbol pkh) tn 1
+        lookups  = Constraints.mintingPolicy (policy pkh)
+        tx       = Constraints.mustMintValue val
+                    <> Constraints.mustBeSignedBy pkh
+                      <> Constraints.mustPayToPubKey ownerPkh val
     ledgerTx <- submitTxConstraintsWith @Void lookups tx
     _ <- awaitTxConfirmed (getCardanoTxId ledgerTx)
     Contract.logInfo @String $ printf "forged %s" (show val)
