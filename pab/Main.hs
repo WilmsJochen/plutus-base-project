@@ -93,10 +93,10 @@ instance Builtin.HasDefinitions StarterContracts where
     getDefinitions = [MyModuleContract, VidBidContract]
     getSchema =  \case
         MyModuleContract -> Builtin.endpointsToSchemas @MyModule.GameSchema
-        VidBidContract -> Builtin.endpointsToSchemas @Mint.VidBidSchema
+        VidBidContract -> Builtin.endpointsToSchemas @VidBid.VidBidSchema
     getContract = \case
         MyModuleContract -> SomeBuiltin (MyModule.game @ContractError)
-        VidBidContract -> SomeBuiltin (Mint.vidBidContract @ContractError)
+        VidBidContract -> SomeBuiltin (VidBid.vidBidContract @ContractError)
 
 handlers :: SimulatorEffectHandlers (Builtin StarterContracts)
 handlers =

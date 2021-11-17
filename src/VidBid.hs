@@ -50,6 +50,13 @@ data CreateParams = CreateParams
     deriving stock (Generic, Haskell.Show, Haskell.Eq)
     deriving anyclass (FromJSON, ToJSON, ToSchema)
 
+data PayDayParams = PayDayParams
+    { pdTokenViewsTupleList :: [(TokenName, Haskell.Int)]
+    , pdAmountToPay         :: Haskell.Int
+    }
+    deriving stock (Generic, Haskell.Show, Haskell.Eq)
+    deriving anyclass (FromJSON, ToJSON, ToSchema)
+
 {-# INLINABLE mkPolicy #-}
 mkPolicy :: PubKeyHash -> () -> ScriptContext -> Bool
 mkPolicy pkh () ctx =  traceIfFalse "wrong amount minted" checkMintedAmountIsOne &&
@@ -72,7 +79,9 @@ policy pkh = mkMintingPolicyScript $
 curSymbol :: PubKeyHash -> CurrencySymbol
 curSymbol pkh = scriptCurrencySymbol $ policy pkh
 
-type VidBidSchema = Endpoint "mint" CreateParams
+type VidBidSchema =
+          Endpoint "mint" CreateParams
+            .\/ Endpoint "payDay" PayDayParams
 
 mint :: CreateParams -> Contract w VidBidSchema Text ()
 mint cp = do
@@ -91,6 +100,22 @@ mint cp = do
 mint' :: Promise () VidBidSchema Text ()
 mint' = endpoint @"mint" mint
 
+
+payDay ::  PayDayParams -> Contract w VidBidSchema Text ()
+payDay pd = do
+        pkh         <- Contract.ownPubKeyHash
+        let tnViewsTupleList = pdTokenViewsTupleList pd
+            amountToPay      = pdAmountToPay  pd
+--            tx               = Constraints.mustPayToPubKey ownerPkh val
+--        ledgerTx <- submitTxConstraintsWith @Void lookups tx
+--        _ <- awaitTxConfirmed (getCardanoTxId ledgerTx)
+        Contract.logInfo @String $ printf "payDay executed"
+
+payDay' :: Promise () VidBidSchema Text ()
+payDay' = endpoint @"payDay" payDay
+
+
+
 vidBidContract :: AsContractError e => Contract () VidBidSchema Text e
 vidBidContract = do
-    selectList [mint'] >> vidBidContract
+    selectList [mint', payDay'] >> vidBidContract
