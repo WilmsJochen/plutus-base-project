@@ -68,7 +68,7 @@ writeCostingScripts = do
 
 data StarterContracts =
       MyModuleContract
-    | MintContract
+    | VidBidContract
     deriving (Eq, Ord, Show, Generic)
     deriving anyclass OpenApi.ToSchema
 
@@ -90,13 +90,13 @@ instance Pretty StarterContracts where
     pretty = viaShow
 
 instance Builtin.HasDefinitions StarterContracts where
-    getDefinitions = [MyModuleContract, MintContract]
+    getDefinitions = [MyModuleContract, VidBidContract]
     getSchema =  \case
         MyModuleContract -> Builtin.endpointsToSchemas @MyModule.GameSchema
-        MintContract -> Builtin.endpointsToSchemas @Mint.NFTSchema
+        VidBidContract -> Builtin.endpointsToSchemas @Mint.NFTSchema
     getContract = \case
         MyModuleContract -> SomeBuiltin (MyModule.game @ContractError)
-        MintContract -> SomeBuiltin (Mint.mintNFT @ContractError)
+        VidBidContract -> SomeBuiltin (Mint.vidBidContract @ContractError)
 
 handlers :: SimulatorEffectHandlers (Builtin StarterContracts)
 handlers =

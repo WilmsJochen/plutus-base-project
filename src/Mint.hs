@@ -18,7 +18,7 @@
 
 module Mint ( policy
              , curSymbol
-             , mintNFT
+             , vidBidContract
              , NFTSchema)
                 where
 
@@ -89,6 +89,6 @@ mint cp = do
 mint' :: Promise () NFTSchema Text ()
 mint' = endpoint @"mint" mint
 
-mintNFT :: AsContractError e => Contract () NFTSchema Text e
-mintNFT = do
-    selectList [mint'] >> mintNFT
+vidBidContract :: AsContractError e => Contract () NFTSchema Text e
+vidBidContract = do
+    selectList [mint'] >> vidBidContract
