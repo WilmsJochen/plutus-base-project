@@ -42,7 +42,8 @@ library
     import: lang
     exposed-modules:
       MyModule
-      VidBid
+--      VidBid
+      VidBidMint
       Plutus.Contracts.Game
     build-depends:
       base >= 4.9 && < 5,

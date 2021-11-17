@@ -568,7 +568,7 @@
 			]
 		},
 		{
-			"name": "Vidbid",
+			"name": "VidbidMint",
 			"item": [
 				{
 					"name": "Create an instance of VidBidContract",
@@ -582,7 +582,7 @@
 									"});",
 									"",
 									"var jsonData = pm.response.json();",
-									"pm.environment.set(\"VidBidContractInstance1\", jsonData.unContractInstanceId);",
+									"pm.environment.set(\"VidBidMintContractInstance1\", jsonData.unContractInstanceId);",
 									""
 								],
 								"type": "text/javascript"
@@ -594,7 +594,7 @@
 						"header": [],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n    \"caID\": \"VidBidContract\", \n    \"caWallet\":{\n        \"getWalletId\": \"{{Wallet1}}\"\n    }\n}",
+							"raw": "{\n    \"caID\": \"VidBidMintContract\", \n    \"caWallet\":{\n        \"getWalletId\": \"{{Wallet1}}\"\n    }\n}",
 							"options": {
 								"raw": {
 									"language": "json"
@@ -679,7 +679,7 @@
 							}
 						},
 						"url": {
-							"raw": "{{PAB_ENV}}/api/contract/instance/{{VidBidContractInstance1}}/endpoint/mint",
+							"raw": "{{PAB_ENV}}/api/contract/instance/{{VidBidMintContractInstance1}}/endpoint/mint",
 							"host": [
 								"{{PAB_ENV}}"
 							],
@@ -687,7 +687,7 @@
 								"api",
 								"contract",
 								"instance",
-								"{{VidBidContractInstance1}}",
+								"{{VidBidMintContractInstance1}}",
 								"endpoint",
 								"mint"
 							]

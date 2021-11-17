@@ -16,13 +16,13 @@
 {-# LANGUAGE NoImplicitPrelude          #-}
 {-# LANGUAGE RecordWildCards            #-}
 
-module VidBid ( policy
-             , curSymbol
-             , vidBidContract
-             , VidBidSchema
-             , CreateParams(..)
-              )
-                where
+module VidBidMint (   policy
+                   , curSymbol
+                   , vidBidMintContract
+                   , VidBidMintSchema
+                   , CreateParams(..)
+                  )
+                  where
 
 import           Control.Monad          hiding (fmap)
 import           Data.Text              (Text)
@@ -50,12 +50,6 @@ data CreateParams = CreateParams
     deriving stock (Generic, Haskell.Show, Haskell.Eq)
     deriving anyclass (FromJSON, ToJSON, ToSchema)
 
-data PayDayParams = PayDayParams
-    { pdTokenViewsTupleList :: [(TokenName, Haskell.Int)]
-    , pdAmountToPay         :: Haskell.Int
-    }
-    deriving stock (Generic, Haskell.Show, Haskell.Eq)
-    deriving anyclass (FromJSON, ToJSON, ToSchema)
 
 {-# INLINABLE mkPolicy #-}
 mkPolicy :: PubKeyHash -> () -> ScriptContext -> Bool
@@ -79,11 +73,10 @@ policy pkh = mkMintingPolicyScript $
 curSymbol :: PubKeyHash -> CurrencySymbol
 curSymbol pkh = scriptCurrencySymbol $ policy pkh
 
-type VidBidSchema =
+type VidBidMintSchema =
           Endpoint "mint" CreateParams
-            .\/ Endpoint "payDay" PayDayParams
 
-mint :: CreateParams -> Contract w VidBidSchema Text ()
+mint :: CreateParams -> Contract w VidBidMintSchema Text ()
 mint cp = do
     pkh         <- Contract.ownPubKeyHash
     let tn       = cpTokenName cp
@@ -97,25 +90,10 @@ mint cp = do
     _ <- awaitTxConfirmed (getCardanoTxId ledgerTx)
     Contract.logInfo @String $ printf "forged %s" (show val)
 
-mint' :: Promise () VidBidSchema Text ()
+mint' :: Promise () VidBidMintSchema Text ()
 mint' = endpoint @"mint" mint
 
 
-payDay ::  PayDayParams -> Contract w VidBidSchema Text ()
-payDay pd = do
-        pkh         <- Contract.ownPubKeyHash
-        let tnViewsTupleList = pdTokenViewsTupleList pd
-            amountToPay      = pdAmountToPay  pd
---            tx               = Constraints.mustPayToPubKey ownerPkh val
---        ledgerTx <- submitTxConstraintsWith @Void lookups tx
---        _ <- awaitTxConfirmed (getCardanoTxId ledgerTx)
-        Contract.logInfo @String $ printf "payDay executed"
-
-payDay' :: Promise () VidBidSchema Text ()
-payDay' = endpoint @"payDay" payDay
-
-
-
-vidBidContract :: AsContractError e => Contract () VidBidSchema Text e
-vidBidContract = do
-    selectList [mint', payDay'] >> vidBidContract
+vidBidMintContract :: AsContractError e => Contract () VidBidMintSchema Text e
+vidBidMintContract = do
+    selectList [mint'] >> vidBidMintContract
