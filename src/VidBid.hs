@@ -16,10 +16,12 @@
 {-# LANGUAGE NoImplicitPrelude          #-}
 {-# LANGUAGE RecordWildCards            #-}
 
-module Mint ( policy
+module VidBid ( policy
              , curSymbol
              , vidBidContract
-             , NFTSchema)
+             , VidBidSchema
+             , CreateParams(..)
+              )
                 where
 
 import           Control.Monad          hiding (fmap)
@@ -70,9 +72,9 @@ policy pkh = mkMintingPolicyScript $
 curSymbol :: PubKeyHash -> CurrencySymbol
 curSymbol pkh = scriptCurrencySymbol $ policy pkh
 
-type NFTSchema = Endpoint "mint" CreateParams
+type VidBidSchema = Endpoint "mint" CreateParams
 
-mint :: CreateParams -> Contract w NFTSchema Text ()
+mint :: CreateParams -> Contract w VidBidSchema Text ()
 mint cp = do
     pkh         <- Contract.ownPubKeyHash
     let tn       = cpTokenName cp
@@ -86,9 +88,9 @@ mint cp = do
     _ <- awaitTxConfirmed (getCardanoTxId ledgerTx)
     Contract.logInfo @String $ printf "forged %s" (show val)
 
-mint' :: Promise () NFTSchema Text ()
+mint' :: Promise () VidBidSchema Text ()
 mint' = endpoint @"mint" mint
 
-vidBidContract :: AsContractError e => Contract () NFTSchema Text e
+vidBidContract :: AsContractError e => Contract () VidBidSchema Text e
 vidBidContract = do
     selectList [mint'] >> vidBidContract

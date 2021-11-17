@@ -28,7 +28,7 @@ import qualified Plutus.PAB.Simulator                as Simulator
 import qualified Plutus.PAB.Webserver.Server         as PAB.Server
 import           Plutus.Contracts.Game               as Game
 import           MyModule
-import           Mint
+import           VidBid
 import           Plutus.Trace.Emulator.Extract       (writeScriptsTo, ScriptsConfig (..), Command (..))
 import           Ledger.Index                        (ValidatorMode(..))
 
@@ -93,7 +93,7 @@ instance Builtin.HasDefinitions StarterContracts where
     getDefinitions = [MyModuleContract, VidBidContract]
     getSchema =  \case
         MyModuleContract -> Builtin.endpointsToSchemas @MyModule.GameSchema
-        VidBidContract -> Builtin.endpointsToSchemas @Mint.NFTSchema
+        VidBidContract -> Builtin.endpointsToSchemas @Mint.VidBidSchema
     getContract = \case
         MyModuleContract -> SomeBuiltin (MyModule.game @ContractError)
         VidBidContract -> SomeBuiltin (Mint.vidBidContract @ContractError)
