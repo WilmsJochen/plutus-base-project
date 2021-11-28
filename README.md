@@ -1,4 +1,14 @@
-# Plutus Platform starter project
+# Plutus base project
+
+Forked from plutus starter project. Because i encountered a lot of compiling issues i decided to share my work to get rid of them. In this repo you can find a pab with 3 scripts that compiles succesfully ( at least on the 28 of November.)
+ -  MyModule -> a normal validator script
+ -  VidBidMint -> a minting policy
+ -  VidBid -> An empty statemachine that compiles and is ready to be expanded with business logic. 
+
+I hope you find this usefull
+
+
+# Plutus starter Readme
 
 This project gives a simple starter project for using the Plutus Platform.
 
