@@ -21,6 +21,7 @@ import qualified Data.OpenApi                        as OpenApi
 import           Data.Text.Prettyprint.Doc           (Pretty (..), viaShow)
 import           GHC.Generics                        (Generic)
 import           Plutus.Contract                     (ContractError)
+import           Plutus.Contract.StateMachine        as SM
 import           Plutus.PAB.Effects.Contract.Builtin (Builtin, SomeBuiltin (..), BuiltinHandler(contractHandler))
 import qualified Plutus.PAB.Effects.Contract.Builtin as Builtin
 import           Plutus.PAB.Simulator                (SimulatorEffectHandlers)
@@ -29,6 +30,7 @@ import qualified Plutus.PAB.Webserver.Server         as PAB.Server
 import           Plutus.Contracts.Game               as Game
 import           MyModule
 import           VidBidMint
+import           VidBid
 import           Plutus.Trace.Emulator.Extract       (writeScriptsTo, ScriptsConfig (..), Command (..))
 import           Ledger.Index                        (ValidatorMode(..))
 
@@ -69,6 +71,7 @@ writeCostingScripts = do
 data StarterContracts =
       MyModuleContract
     | VidBidMintContract
+    | VidBidContract
     deriving (Eq, Ord, Show, Generic)
     deriving anyclass OpenApi.ToSchema
 
@@ -90,13 +93,15 @@ instance Pretty StarterContracts where
     pretty = viaShow
 
 instance Builtin.HasDefinitions StarterContracts where
-    getDefinitions = [MyModuleContract, VidBidMintContract]
+    getDefinitions = [MyModuleContract, VidBidMintContract, VidBidContract]
     getSchema =  \case
         MyModuleContract -> Builtin.endpointsToSchemas @MyModule.GameSchema
         VidBidMintContract -> Builtin.endpointsToSchemas @VidBidMint.VidBidMintSchema
+        VidBidContract -> Builtin.endpointsToSchemas @VidBid.GameStateMachineSchema
     getContract = \case
         MyModuleContract -> SomeBuiltin (MyModule.game @ContractError)
         VidBidMintContract -> SomeBuiltin (VidBidMint.vidBidMintContract @ContractError)
+        VidBidContract -> SomeBuiltin (VidBid.contract @SM.SMContractError)
 
 handlers :: SimulatorEffectHandlers (Builtin StarterContracts)
 handlers =

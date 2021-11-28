@@ -42,7 +42,7 @@ library
     import: lang
     exposed-modules:
       MyModule
---      VidBid
+      VidBid
       VidBidMint
       Plutus.Contracts.Game
     build-depends:
@@ -96,4 +96,3 @@ executable plutus-starter-pab
     freer-extras -any,
     plutus-ledger -any,
     openapi3 -any,
-
